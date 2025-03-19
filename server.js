@@ -60,7 +60,6 @@ app.get("/", (req, res) => {
   res.json(response);
   console.log("✅ Response sent");
 });
-
 app.get("/test", (req, res) => {
   console.log("✅ /test endpoint hit");
   const response = { success: true, message: "Backend is running!" };
