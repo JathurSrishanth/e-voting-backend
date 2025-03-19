@@ -6,9 +6,19 @@ const bcrypt = require("bcryptjs");
 
 const app = express();
 app.use(express.json());
+// After app.use(express.json())
 app.get("/test", (req, res) => {
+  console.log("✅ /test endpoint hit");
   res.json({ success: true, message: "Backend is running!" });
 });
+
+app.post("/register", async (req, res) => {
+  console.log("✅ /register endpoint hit");
+  // ... rest of the code
+});
+
+// At the end of the file, before app.listen
+console.log("✅ Routes registered");
 
 // ✅ **CORS Configuration**
 app.use(cors({ origin: process.env.ALLOWED_ORIGIN || "*", credentials: true }));
