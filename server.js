@@ -55,14 +55,19 @@ console.log("✅ Setting up routes...");
 
 app.get("/", (req, res) => {
   console.log("✅ Root endpoint hit");
-  res.json({ success: true, message: "Welcome to the e-voting backend!" });
+  const response = { success: true, message: "Welcome to the e-voting backend!" };
+  console.log("✅ Sending response:", response);
+  res.json(response);
+  console.log("✅ Response sent");
 });
 
 app.get("/test", (req, res) => {
   console.log("✅ /test endpoint hit");
-  res.json({ success: true, message: "Backend is running!" });
+  const response = { success: true, message: "Backend is running!" };
+  console.log("✅ Sending response:", response);
+  res.json(response);
+  console.log("✅ Response sent");
 });
-
 app.post("/register", async (req, res) => {
   console.log("✅ /register endpoint hit");
   try {
