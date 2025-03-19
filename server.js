@@ -5,31 +5,24 @@ const cors = require("cors");
 const bcrypt = require("bcryptjs");
 
 const app = express();
+
+// Middleware setup
 app.use(express.json());
-// After app.use(express.json())
-app.get("/test", (req, res) => {
-  console.log("✅ /test endpoint hit");
-  res.json({ success: true, message: "Backend is running!" });
-});
-
-app.post("/register", async (req, res) => {
-  console.log("✅ /register endpoint hit");
-  // ... rest of the code
-});
-
-// At the end of the file, before app.listen
-console.log("✅ Routes registered");
-
-// ✅ **CORS Configuration**
 app.use(cors({ origin: process.env.ALLOWED_ORIGIN || "*", credentials: true }));
 
-// ✅ **Ensure MongoDB URI is Set**
+// Add request logging middleware to debug
+app.use((req, res, next) => {
+  console.log(`✅ Request received: ${req.method} ${req.url}`);
+  next();
+});
+
+// Ensure MongoDB URI is set
 if (!process.env.MONGO_URI) {
   console.error("❌ Error: MONGO_URI is not defined in .env file");
   process.exit(1);
 }
 
-// ✅ **MongoDB Connection**
+// MongoDB Connection
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Connected to MongoDB"))
@@ -38,18 +31,18 @@ mongoose
     process.exit(1);
   });
 
-// ✅ **User Schema**
+// User Schema
 const UserSchema = new mongoose.Schema({
-  voterID: { type: String, required: true, unique: true, index: true }, // Added indexing
+  voterID: { type: String, required: true, unique: true, index: true },
   username: { type: String, required: true, unique: true, lowercase: true },
   password: { type: String, required: true },
 });
 
 const User = mongoose.model("User", UserSchema);
 
-// ✅ **Vote Schema**
+// Vote Schema
 const VoteSchema = new mongoose.Schema({
-  voterID: { type: String, required: true, index: true }, // Added indexing
+  voterID: { type: String, required: true, index: true },
   candidate: { type: String, required: true },
   position: { type: String, required: true, enum: ["MLA", "MP"] },
   timestamp: { type: Date, default: Date.now },
@@ -57,8 +50,21 @@ const VoteSchema = new mongoose.Schema({
 
 const Vote = mongoose.model("Vote", VoteSchema);
 
-// ✅ **Register API**
+// Routes
+console.log("✅ Setting up routes...");
+
+app.get("/", (req, res) => {
+  console.log("✅ Root endpoint hit");
+  res.json({ success: true, message: "Welcome to the e-voting backend!" });
+});
+
+app.get("/test", (req, res) => {
+  console.log("✅ /test endpoint hit");
+  res.json({ success: true, message: "Backend is running!" });
+});
+
 app.post("/register", async (req, res) => {
+  console.log("✅ /register endpoint hit");
   try {
     const { voterID, username, password } = req.body;
     if (!voterID || !username || !password) {
@@ -81,7 +87,6 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// ✅ **Login API**
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -106,7 +111,6 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ✅ **Voting API (Prevents Multiple Votes for the Same Position)**
 app.post("/vote", async (req, res) => {
   try {
     let { voterID, candidate, position } = req.body;
@@ -116,13 +120,11 @@ app.post("/vote", async (req, res) => {
       return res.status(400).json({ success: false, message: "Voter ID, Candidate, and Position are required" });
     }
 
-    // 🔹 Check if the voter has already voted for this position
     const existingVote = await Vote.findOne({ voterID, position });
     if (existingVote) {
       return res.status(400).json({ success: false, message: "You have already voted for this position!" });
     }
 
-    // 🔹 Save the vote
     const vote = new Vote({ voterID, candidate, position });
     await vote.save();
 
@@ -133,7 +135,6 @@ app.post("/vote", async (req, res) => {
   }
 });
 
-// ✅ **Check Vote API**
 app.get("/check-vote/:voterID", async (req, res) => {
   try {
     const { voterID } = req.params;
@@ -149,7 +150,6 @@ app.get("/check-vote/:voterID", async (req, res) => {
   }
 });
 
-// ✅ **Results API (Shows Vote Counts Sorted by Most Votes)**
 app.get("/results", async (req, res) => {
   try {
     const results = await Vote.aggregate([
@@ -159,7 +159,7 @@ app.get("/results", async (req, res) => {
           totalVotes: { $sum: 1 },
         },
       },
-      { $sort: { totalVotes: -1 } }, // Sort by totalVotes in descending order
+      { $sort: { totalVotes: -1 } },
     ]);
 
     res.json({ success: true, results });
@@ -169,7 +169,6 @@ app.get("/results", async (req, res) => {
   }
 });
 
-// ✅ **Delete All Votes API (For Debugging)**
 app.delete("/clear-votes", async (req, res) => {
   try {
     await Vote.deleteMany({});
@@ -181,11 +180,14 @@ app.delete("/clear-votes", async (req, res) => {
   }
 });
 
-// ✅ **404 Error Handler**
+console.log("✅ Routes registered");
+
+// 404 Error Handler
 app.use((req, res) => {
+  console.log(`❌ 404: ${req.method} ${req.url}`);
   res.status(404).json({ success: false, message: "Route not found" });
 });
 
-// ✅ **Start Server**
+// Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
